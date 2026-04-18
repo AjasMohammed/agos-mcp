@@ -1,0 +1,18 @@
+    Checking gmail-mcp-core v0.0.1 (/home/ajas/Desktop/agos-mcp/gmail-mcp/crates/gmail-mcp-core)
+crates/gmail-mcp-core/src/mcp/server.rs:169:27: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `uuid`: use of unresolved module or unlinked crate `uuid`
+crates/gmail-mcp-core/src/mcp/transport.rs:5:33: error[E0412]: cannot find type `Stdin` in module `tokio::io`: not found in `tokio::io`
+crates/gmail-mcp-core/src/mcp/transport.rs:6:24: error[E0412]: cannot find type `Stdout` in module `tokio::io`: not found in `tokio::io`
+crates/gmail-mcp-core/src/mcp/transport.rs:13:46: error[E0425]: cannot find function `stdin` in module `tokio::io`: not found in `tokio::io`
+crates/gmail-mcp-core/src/mcp/transport.rs:14:32: error[E0425]: cannot find function `stdout` in module `tokio::io`: not found in `tokio::io`
+crates/gmail-mcp-core/src/auth/store/encrypted_file.rs:8:22: warning: unused imports: `PasswordHasher` and `PasswordVerifier`
+crates/gmail-mcp-core/src/auth/manager.rs:48:23: error[E0509]: cannot move out of type `TokenSet`, which implements the `Drop` trait: cannot move out of here, move occurs because `current.access_token` has type `std::string::String`, which does not implement the `Copy` trait
+crates/gmail-mcp-core/src/mcp/http.rs:84:9: warning: unused variable: `token`: help: if this is intentional, prefix it with an underscore: `_token`
+crates/gmail-mcp-core/src/gmail/resumable.rs:7:26: error[E0616]: field `tokens` of struct `client::Client` is private: private field
+crates/gmail-mcp-core/src/gmail/resumable.rs:10:28: error[E0616]: field `http` of struct `client::Client` is private: private field
+crates/gmail-mcp-core/src/gmail/resumable.rs:44:35: error[E0616]: field `http` of struct `client::Client` is private: private field
+crates/gmail-mcp-core/src/auth/store/encrypted_file.rs:83:74: error[E0277]: `?` couldn't convert the error to `AuthError`: the trait `From<argon2::Error>` is not implemented for `AuthError`
+crates/gmail-mcp-core/src/auth/store/encrypted_file.rs:84:50: error[E0277]: `?` couldn't convert the error to `AuthError`: the trait `From<sha2::digest::InvalidLength>` is not implemented for `AuthError`
+crates/gmail-mcp-core/src/auth/store/encrypted_file.rs:100:73: error[E0277]: `?` couldn't convert the error to `AuthError`: the trait `From<argon2::Error>` is not implemented for `AuthError`
+crates/gmail-mcp-core/src/auth/store/encrypted_file.rs:101:50: error[E0277]: `?` couldn't convert the error to `AuthError`: the trait `From<sha2::digest::InvalidLength>` is not implemented for `AuthError`
+warning: `gmail-mcp-core` (lib) generated 2 warnings
+error: could not compile `gmail-mcp-core` (lib) due to 13 previous errors; 2 warnings emitted

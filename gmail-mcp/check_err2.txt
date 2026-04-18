@@ -1,0 +1,16 @@
+    Blocking waiting for file lock on build directory
+    Checking h2 v0.3.27
+    Checking hyper-util v0.1.20
+    Checking tower v0.5.3
+    Checking tower-http v0.6.8
+    Checking hyper-rustls v0.27.9
+    Checking axum v0.7.9
+    Checking reqwest v0.12.28
+    Checking hyper v0.14.32
+    Checking reqwest v0.11.27
+    Checking jsonschema v0.17.1
+    Checking gmail-mcp-core v0.0.1 (/home/ajas/Desktop/agos-mcp/gmail-mcp/crates/gmail-mcp-core)
+crates/gmail-mcp-core/src/mcp/server.rs:155:25: warning: unused variable: `t_buf`: help: if this is intentional, prefix it with an underscore: `_t_buf`
+crates/gmail-mcp-core/src/mcp/server.rs:155:21: warning: variable does not need to be mutable
+warning: `gmail-mcp-core` (lib) generated 2 warnings (run `cargo fix --lib -p gmail-mcp-core` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 46s
