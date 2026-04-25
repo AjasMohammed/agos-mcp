@@ -1,0 +1,2 @@
+# Warn-as-error is passed via -D warnings on the command line, not here.
+# clippy.toml is reserved for lint-specific configuration options.

@@ -1,0 +1,7 @@
+[licenses]
+unlicensed = "deny"
+copyleft = "deny"
+allow = [
+    "Apache-2.0",
+    "MIT",
+]

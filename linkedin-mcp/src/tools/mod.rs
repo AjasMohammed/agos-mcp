@@ -1,0 +1,14 @@
+pub mod comment_create;
+pub mod comment_delete;
+pub mod comment_list;
+pub mod post_article;
+pub mod post_delete;
+pub mod post_get;
+pub mod post_image;
+pub mod post_text;
+pub mod post_update;
+pub mod post_video;
+pub mod posts_list;
+pub mod reaction_add;
+pub mod reaction_remove;
+pub mod whoami;
