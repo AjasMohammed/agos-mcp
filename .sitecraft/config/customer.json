@@ -1,0 +1,71 @@
+{
+  "legalName": "Agos",
+  "displayName": "Agos",
+  "tagline": null,
+  "description": null,
+  "founded": null,
+  "location": {
+    "addressLine1": null,
+    "addressLine2": null,
+    "city": null,
+    "state": null,
+    "postalCode": null,
+    "country": null,
+    "latitude": null,
+    "longitude": null,
+    "googlePlaceId": null
+  },
+  "serviceAreas": [],
+  "hours": [
+    {
+      "alwaysOpen": false,
+      "close": "17:00",
+      "closed": false,
+      "day": "monday",
+      "open": "09:00"
+    },
+    {
+      "alwaysOpen": false,
+      "close": "17:00",
+      "closed": false,
+      "day": "tuesday",
+      "open": "09:00"
+    },
+    {
+      "alwaysOpen": false,
+      "close": "17:00",
+      "closed": false,
+      "day": "wednesday",
+      "open": "09:00"
+    },
+    {
+      "alwaysOpen": false,
+      "close": "17:00",
+      "closed": false,
+      "day": "thursday",
+      "open": "09:00"
+    },
+    {
+      "alwaysOpen": false,
+      "close": "17:00",
+      "closed": false,
+      "day": "friday",
+      "open": "09:00"
+    },
+    {
+      "alwaysOpen": false,
+      "close": "17:00",
+      "closed": false,
+      "day": "saturday",
+      "open": "09:00"
+    },
+    {
+      "alwaysOpen": false,
+      "close": "17:00",
+      "closed": true,
+      "day": "sunday",
+      "open": "09:00"
+    }
+  ],
+  "socials": {}
+}

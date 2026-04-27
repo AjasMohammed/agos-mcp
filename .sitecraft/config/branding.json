@@ -1,0 +1,54 @@
+{
+  "name": "Agos",
+  "logos": {
+    "primary": null,
+    "mark": null,
+    "wordmark": null,
+    "favicon": null
+  },
+  "colors": {
+    "accent": {
+      "hex": "#06b6d4",
+      "label": "Accent"
+    },
+    "background": {
+      "hex": "#0f172a",
+      "label": "Background"
+    },
+    "foreground": {
+      "hex": "#f8fafc",
+      "label": "Foreground"
+    },
+    "neutral": {
+      "hex": "#64748b",
+      "label": "Neutral"
+    },
+    "primary": {
+      "hex": "#6366f1",
+      "label": "Primary"
+    },
+    "secondary": {
+      "hex": "#8b5cf6",
+      "label": "Secondary"
+    }
+  },
+  "typography": {
+    "baseSize": "16px",
+    "bodyFont": "Inter",
+    "headingFont": "Inter",
+    "monoFont": "JetBrains Mono",
+    "scale": "normal"
+  },
+  "voice": {
+    "alwaysSay": [],
+    "doNotSay": [],
+    "readingGrade": 8,
+    "tone": []
+  },
+  "imagery": {
+    "colorTreatment": "",
+    "notesForAI": "",
+    "style": "",
+    "subjectMatter": ""
+  }
+}
