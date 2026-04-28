@@ -8,8 +8,12 @@ use crate::tools::{
     comment_list::CommentList,
     post_article::PostArticle,
     post_delete::PostDelete,
+    post_document::PostDocument,
     post_get::PostGet,
     post_image::PostImage,
+    post_multi_image::PostMultiImage,
+    post_poll::PostPoll,
+    post_reshare::PostReshare,
     post_text::PostText,
     post_update::PostUpdate,
     post_video::PostVideo,
@@ -46,6 +50,10 @@ pub async fn run(args: ServeArgs) -> anyhow::Result<()> {
             registry.register(CommentDelete { client: client.clone() });
             registry.register(ReactionAdd { client: client.clone() });
             registry.register(ReactionRemove { client: client.clone() });
+            registry.register(PostPoll { client: client.clone() });
+            registry.register(PostDocument { client: client.clone() });
+            registry.register(PostMultiImage { client: client.clone() });
+            registry.register(PostReshare { client: client.clone() });
         }
         None => {
             tracing::warn!(

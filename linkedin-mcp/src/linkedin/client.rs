@@ -207,6 +207,15 @@ impl LinkedInClient {
         Ok(upload.image_urn)
     }
 
+    pub async fn upload_document(&self, path: &std::path::Path) -> Result<String, LinkedInMcpError> {
+        let owner = self.author_urn().await;
+        let upload = media::init_document_upload(self, &owner).await?;
+        let token = self.token.read().await.access_token.clone();
+        media::upload_document_bytes(&self.http, &token, &upload.upload_url, path).await?;
+        media::wait_for_document_ready(self, &upload.document_urn).await?;
+        Ok(upload.document_urn)
+    }
+
     pub async fn upload_video(&self, path: &std::path::Path) -> Result<String, LinkedInMcpError> {
         let owner = self.author_urn().await;
         let metadata = tokio::fs::metadata(path).await

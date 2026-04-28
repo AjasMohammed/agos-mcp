@@ -87,6 +87,13 @@ Tools that require an un-granted scope return a typed `ScopeMissing` error the h
 agentos mcp install gmail
 ```
 
+> **Linux / systemd note:** AgentOS runs MCP servers as systemd user services, which may not have access to the D-Bus session bus needed by the OS keychain. If tools are missing after attaching, re-auth and serve with `--file-store`:
+>
+> ```bash
+> gmail-mcp auth --file-store
+> agentos mcp attach gmail -- gmail-mcp serve --file-store
+> ```
+
 ---
 
 ## Multi-account

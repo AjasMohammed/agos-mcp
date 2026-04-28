@@ -267,3 +267,102 @@ pub async fn wait_for_video_ready(
         "video never became available".into(),
     ))
 }
+
+// ── Document upload ───────────────────────────────────────────────────────────
+
+pub struct DocumentUpload {
+    pub upload_url: String,
+    pub document_urn: String,
+}
+
+pub async fn init_document_upload(
+    client: &LinkedInClient,
+    owner_urn: &str,
+) -> Result<DocumentUpload, LinkedInMcpError> {
+    let body = json!({ "initializeUploadRequest": { "owner": owner_urn } });
+    let resp = client
+        .raw_request(Method::POST, "/rest/documents?action=initializeUpload")
+        .await?
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| LinkedInMcpError::LinkedInServerError(e.to_string()))?;
+    if !resp.status().is_success() {
+        return Err(crate::linkedin::client::map_status(resp).await);
+    }
+    let v: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| LinkedInMcpError::LinkedInServerError(e.to_string()))?;
+    let upload_url = v["value"]["uploadUrl"]
+        .as_str()
+        .ok_or_else(|| LinkedInMcpError::LinkedInServerError("missing uploadUrl".into()))?
+        .to_string();
+    let document_urn = v["value"]["document"]
+        .as_str()
+        .ok_or_else(|| LinkedInMcpError::LinkedInServerError("missing document URN".into()))?
+        .to_string();
+    Ok(DocumentUpload { upload_url, document_urn })
+}
+
+pub async fn upload_document_bytes(
+    http: &reqwest::Client,
+    access_token: &str,
+    upload_url: &str,
+    path: &std::path::Path,
+) -> Result<(), LinkedInMcpError> {
+    let bytes = tokio::fs::read(path)
+        .await
+        .map_err(|e| LinkedInMcpError::InvalidInput(e.to_string()))?;
+    // LinkedIn document upload URLs expect application/octet-stream regardless of file type.
+    let resp = http
+        .put(upload_url)
+        .bearer_auth(access_token)
+        .header(header::CONTENT_TYPE, "application/octet-stream")
+        .body(bytes)
+        .send()
+        .await
+        .map_err(|e| LinkedInMcpError::LinkedInServerError(e.to_string()))?;
+    if resp.status().is_success() {
+        Ok(())
+    } else {
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        Err(LinkedInMcpError::LinkedInServerError(format!(
+            "document upload failed: {status}: {body}"
+        )))
+    }
+}
+
+pub async fn wait_for_document_ready(
+    client: &LinkedInClient,
+    document_urn: &str,
+) -> Result<(), LinkedInMcpError> {
+    let encoded = urlencoding::encode(document_urn);
+    // 30 attempts with growing delay (~8 min total) to accommodate large PDFs.
+    // Analogous to GET /rest/images/{urn} and GET /rest/videos/{urn} status polling.
+    for attempt in 0u64..30 {
+        let resp = client
+            .raw_request(Method::GET, &format!("/rest/documents/{encoded}"))
+            .await?
+            .send()
+            .await
+            .map_err(|e| LinkedInMcpError::LinkedInServerError(e.to_string()))?;
+        let v: serde_json::Value = resp
+            .json()
+            .await
+            .map_err(|e| LinkedInMcpError::LinkedInServerError(e.to_string()))?;
+        match v["status"].as_str() {
+            Some("AVAILABLE") => return Ok(()),
+            Some("PROCESSING_FAILED") => {
+                return Err(LinkedInMcpError::LinkedInServerError(
+                    "document processing failed".into(),
+                ))
+            }
+            _ => tokio::time::sleep(std::time::Duration::from_secs(2 + attempt)).await,
+        }
+    }
+    Err(LinkedInMcpError::LinkedInServerError(
+        "document never became available".into(),
+    ))
+}
