@@ -67,5 +67,28 @@
       "open": "09:00"
     }
   ],
-  "socials": {}
+  "socials": {},
+  "identity": {
+    "dba": "AgentOS",
+    "elevatorPitch": "",
+    "languages": [],
+    "mission": "",
+    "stage": "idea",
+    "values": [],
+    "vision": ""
+  },
+  "services": {
+    "items": [
+      {
+        "bookingUrl": "",
+        "category": "Tool",
+        "desc": "Opensource Mcp servers",
+        "featured": false,
+        "name": "MCP",
+        "price": "free",
+        "seasonal": false,
+        "slug": "mcp"
+      }
+    ]
+  }
 }

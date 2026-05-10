@@ -1,0 +1,14 @@
+{
+  "name": "sitecraft",
+  "version": "0.1.0",
+  "description": "SiteCraft build kit — turn synced dashboard data (.sitecraft/*.json) into a first-build Next.js site. Provides /build-site, /sync-status, /seo-deploy commands plus skills for scaffolding, branding, content, SEO, and status tracking.",
+  "author": {
+    "name": "Anew / SiteCraft",
+    "email": "sitecraft-bot@anew.dev"
+  },
+  "homepage": "https://github.com/anew/sitecraft",
+  "keywords": ["nextjs", "scaffolding", "seo", "branding", "anew", "sitecraft"],
+  "commands": "./commands",
+  "skills": "./skills",
+  "agents": "./agents"
+}
