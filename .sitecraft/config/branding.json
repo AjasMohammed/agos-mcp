@@ -50,5 +50,16 @@
     "notesForAI": "",
     "style": "",
     "subjectMatter": ""
+  },
+  "essence": {
+    "archetype": "Explorer",
+    "brandPromise": "Ecosystem for Agents",
+    "personalitySliders": {
+      "classic": 50,
+      "formal": 50,
+      "premium": 50,
+      "serious": 50
+    },
+    "story": ""
   }
 }
