@@ -51,6 +51,21 @@ impl LinkedInClient {
         if !rec.is_expiring_soon() {
             return Ok(());
         }
+
+        // Remote (broker) mode: the broker holds the refresh token and refreshes
+        // centrally, so we just re-fetch an already-valid token rather than
+        // running the local refresh grant (we have no secret/refresh token here).
+        if self.store.is_remote() {
+            return match self.store.load(&self.account).await {
+                Ok(Some(fresh)) => {
+                    *rec = fresh;
+                    Ok(())
+                }
+                Ok(None) => Err(LinkedInMcpError::AuthRequired),
+                Err(e) => Err(LinkedInMcpError::LinkedInServerError(e.to_string())),
+            };
+        }
+
         match refresh::refresh(&self.http, &mut rec, self.client_secret.as_deref()).await {
             Ok(()) => {}
             // Keep "human must re-auth" distinct from a transient error: the
@@ -64,6 +79,7 @@ impl LinkedInClient {
         }
         self.store
             .save(&self.account, &rec)
+            .await
             .map_err(|e| LinkedInMcpError::LinkedInServerError(e.to_string()))?;
         Ok(())
     }
