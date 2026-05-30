@@ -7,9 +7,18 @@ mod cli;
 use cli::{AccountsCmd, Cli};
 use gmail_mcp_core::auth::store::TokenStore;
 
-async fn get_token_store(file_store: bool) -> Arc<dyn TokenStore> {
-    if file_store || std::env::var("GMAIL_MCP_FILE_STORE").is_ok() {
-        eprintln!("WARNING: Using encrypted file store fallback.");
+/// Selects the token backend automatically: the OS keychain when it's
+/// reachable, otherwise an encrypted file. Every command calls this with no
+/// arguments, so `auth` and `serve` can never disagree about where tokens live.
+async fn get_token_store() -> Arc<dyn TokenStore> {
+    use gmail_mcp_core::auth::store::keychain::KeychainStore;
+
+    if KeychainStore::is_available("gmail-mcp").await {
+        Arc::new(KeychainStore::new("gmail-mcp")) as Arc<dyn TokenStore>
+    } else {
+        eprintln!(
+            "WARNING: OS keychain unavailable; falling back to encrypted file store at ~/.gmail-mcp-tokens.enc"
+        );
         let home = dirs::home_dir().expect("no home dir");
         let path = home.join(".gmail-mcp-tokens.enc");
         let passphrase = std::env::var("GMAIL_MCP_PASSPHRASE")
@@ -17,10 +26,6 @@ async fn get_token_store(file_store: bool) -> Arc<dyn TokenStore> {
         Arc::new(
             gmail_mcp_core::auth::store::encrypted_file::EncryptedFileStore::new(path, passphrase),
         ) as Arc<dyn TokenStore>
-    } else {
-        Arc::new(gmail_mcp_core::auth::store::keychain::KeychainStore::new(
-            "gmail-mcp",
-        )) as Arc<dyn TokenStore>
     }
 }
 
@@ -43,7 +48,6 @@ async fn main() -> anyhow::Result<()> {
             account,
             client_id,
             client_secret,
-            file_store,
         } => {
             eprintln!("Auth flow started for account '{account}'");
             let client_id = client_id.unwrap_or_else(|| "default-client-id".to_string());
@@ -66,7 +70,7 @@ async fn main() -> anyhow::Result<()> {
             );
             let tokens = flow.run().await.expect("OAuth loopback flow failed");
 
-            let store = get_token_store(file_store).await;
+            let store = get_token_store().await;
             store
                 .put(&account, &tokens)
                 .await
@@ -77,7 +81,7 @@ async fn main() -> anyhow::Result<()> {
         Cli::Accounts { cmd } => {
             match cmd {
                 AccountsCmd::List => {
-                    let store = get_token_store(false).await;
+                    let store = get_token_store().await;
                     let accounts = store.list_accounts().await.unwrap_or_default();
                     if accounts.is_empty() {
                         println!(
@@ -93,7 +97,7 @@ async fn main() -> anyhow::Result<()> {
             Ok(())
         }
         Cli::Logout { account } => {
-            let store = get_token_store(false).await;
+            let store = get_token_store().await;
             if let Err(e) = store.delete(&account).await {
                 eprintln!("Failed to logout account '{account}': {e}");
             } else {
@@ -107,7 +111,7 @@ async fn main() -> anyhow::Result<()> {
 async fn run_server(account: String) -> anyhow::Result<()> {
     let mut registry = ToolRegistry::new();
 
-    let store = get_token_store(false).await;
+    let store = get_token_store().await;
     let client_id = std::env::var("GMAIL_MCP_CLIENT_ID")
         .unwrap_or_else(|_| "default-client-id".to_string());
     let scopes: Vec<String> = std::env::var("GMAIL_MCP_SCOPES")

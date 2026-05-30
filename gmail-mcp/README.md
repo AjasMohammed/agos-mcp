@@ -85,12 +85,7 @@ Tools that require an un-granted scope return a typed `ScopeMissing` error the h
 agentos mcp install gmail
 ```
 
-> **Linux / systemd note:** AgentOS runs MCP servers as systemd user services, which may not have access to the D-Bus session bus needed by the OS keychain. If tools are missing after attaching, re-auth and serve with `--file-store`:
->
-> ```bash
-> gmail-mcp auth --file-store
-> agentos mcp attach gmail -- gmail-mcp serve --file-store
-> ```
+> **Linux / systemd note:** AgentOS runs MCP servers as systemd user services, which may not have access to the D-Bus session bus needed by the OS keychain. When the keychain isn't reachable, `gmail-mcp` detects this automatically and falls back to an encrypted file store (printing a warning) — no flags needed. `auth` and `serve` make the same choice, so they always agree on where tokens live.
 
 ---
 
@@ -121,13 +116,11 @@ Register your app in [Google Cloud Console](https://console.cloud.google.com/) w
 
 ---
 
-## File store fallback (not recommended)
+## File store fallback (automatic)
 
-```bash
-gmail-mcp auth --file-store
-```
+`gmail-mcp` always prefers the OS keychain. When it probes the keychain at startup and finds it unreachable (e.g. a headless/systemd session with no D-Bus), it transparently falls back to an Argon2+AES-256-GCM encrypted file at `~/.gmail-mcp-tokens.enc`, printing a warning. There is no flag to set — both `auth` and `serve` run the same detection, so they never disagree.
 
-Tokens are stored in an Argon2+AES-256-GCM encrypted file. A warning is printed on every startup. **Not recommended**—use only when the OS keychain is unavailable.
+Set `GMAIL_MCP_PASSPHRASE` to protect that file; otherwise a known default passphrase is used (portable, but not secret).
 
 ---
 

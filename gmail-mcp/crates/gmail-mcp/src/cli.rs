@@ -38,10 +38,6 @@ pub enum Cli {
         /// Override the OAuth client secret
         #[arg(long, env = "GMAIL_MCP_CLIENT_SECRET")]
         client_secret: Option<String>,
-
-        /// Use encrypted file store instead of OS keychain.
-        #[arg(long)]
-        file_store: bool,
     },
     /// Manage accounts
     Accounts {
