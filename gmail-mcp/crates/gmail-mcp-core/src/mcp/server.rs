@@ -3,7 +3,7 @@ use super::protocol::{
     InitializeResult, JsonRpcRequest, JsonRpcResponse, ServerCapabilities, ServerInfo,
     ToolsCapability,
 };
-use super::schema::validate_against_schema;
+use super::schema::{normalize_args, validate_against_schema};
 use super::tool::ToolRegistry;
 use super::transport::StdioTransport;
 use serde::Deserialize;
@@ -131,7 +131,8 @@ impl McpServer {
 
         let output = match tool_res {
             Ok(tool) => {
-                let args = p.arguments.clone().unwrap_or(serde_json::json!({}));
+                let mut args = p.arguments.clone().unwrap_or(serde_json::json!({}));
+                normalize_args(&mut args);
                 if let Err(e) = validate_against_schema(&args, &tool.input_schema()) {
                     result_status = "error".to_string();
                     let err = McpError::SchemaValidation(e.to_string());

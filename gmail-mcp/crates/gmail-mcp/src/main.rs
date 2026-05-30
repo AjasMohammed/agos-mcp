@@ -110,12 +110,31 @@ async fn run_server(account: String) -> anyhow::Result<()> {
     let store = get_token_store(false).await;
     let client_id = std::env::var("GMAIL_MCP_CLIENT_ID")
         .unwrap_or_else(|_| "default-client-id".to_string());
+    let scopes: Vec<String> = std::env::var("GMAIL_MCP_SCOPES")
+        .unwrap_or_else(|_| "https://www.googleapis.com/auth/gmail.modify".to_string())
+        .split_whitespace()
+        .map(String::from)
+        .collect();
     let tokens = std::sync::Arc::new(gmail_mcp_core::auth::TokenManager::new(
-        store,
-        client_id,
+        store.clone(),
+        client_id.clone(),
         account.clone(),
     ));
-    let gmail = std::sync::Arc::new(gmail_mcp_core::gmail::Client::new(tokens).await);
+    let gmail = std::sync::Arc::new(gmail_mcp_core::gmail::Client::new(tokens.clone()).await);
+
+    let auth_shared = Arc::new(gmail_mcp_core::tools::AuthShared {
+        store: store.clone(),
+        client_id: client_id.clone(),
+        account: account.clone(),
+        scopes,
+        token_manager: tokens.clone(),
+    });
+    registry.register(Arc::new(gmail_mcp_core::tools::GmailBeginAuthTool {
+        shared: auth_shared.clone(),
+    }));
+    registry.register(Arc::new(gmail_mcp_core::tools::GmailCompleteAuthTool {
+        shared: auth_shared.clone(),
+    }));
 
     registry.register(Arc::new(gmail_mcp_core::tools::GmailSearchTool {
         client: gmail.clone(),

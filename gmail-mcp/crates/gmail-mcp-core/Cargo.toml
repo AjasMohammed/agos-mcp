@@ -28,6 +28,7 @@ sha2 = "0.10"
 base64 = "0.22"
 mime = "0.3"
 mail-builder = "0.3"
+pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
 futures = "0.3"
 axum = "0.7"
 tokio-stream = "0.1"

@@ -314,6 +314,19 @@ mod schema_shape_tests {
     }
 
     #[test]
+    fn compose_schema_has_additional_properties_false() {
+        use gmail_mcp_core::tools::compose::compose_schema;
+        let s = compose_schema();
+        assert_eq!(
+            s["additionalProperties"].as_bool(),
+            Some(false),
+            "compose_schema must reject unknown keys"
+        );
+        assert_has_required(&s, "to");
+        assert_has_required(&s, "subject");
+    }
+
+    #[test]
     fn create_filter_from_template_has_enum() {
         let s = serde_json::json!({
             "type": "object",
@@ -330,5 +343,69 @@ mod schema_shape_tests {
         assert_object(&s);
         let variants = s["properties"]["template"]["enum"].as_array().unwrap();
         assert!(variants.len() == 4);
+    }
+}
+
+#[cfg(test)]
+mod normalize_args_tests {
+    use gmail_mcp_core::mcp::schema::{normalize_args, validate_against_schema};
+    use gmail_mcp_core::tools::compose::compose_schema;
+
+    #[test]
+    fn rewrites_recipient_to_canonical_to() {
+        let mut args = serde_json::json!({
+            "recipient": "user@example.com",
+            "subject": "hi",
+            "body": "test"
+        });
+        normalize_args(&mut args);
+        assert_eq!(args["to"], serde_json::json!("user@example.com"));
+        assert!(args.get("recipient").is_none(), "alias must be removed");
+        validate_against_schema(&args, &compose_schema())
+            .expect("schema must accept normalized args");
+    }
+
+    #[test]
+    fn keeps_to_drops_alias_when_both_present() {
+        let mut args = serde_json::json!({
+            "to": "canonical@example.com",
+            "recipient": "alias@example.com",
+            "subject": "hi"
+        });
+        normalize_args(&mut args);
+        assert_eq!(args["to"], serde_json::json!("canonical@example.com"));
+        assert!(args.get("recipient").is_none());
+    }
+
+    #[test]
+    fn unknown_key_rejected_with_received_keys_in_error() {
+        let mut args = serde_json::json!({
+            "to": "user@example.com",
+            "subject": "hi",
+            "from_addr": "spoof@example.com"
+        });
+        normalize_args(&mut args);
+        let err = validate_against_schema(&args, &compose_schema())
+            .expect_err("additionalProperties:false must reject unknown key");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("Received keys"),
+            "error must include 'Received keys': {msg}"
+        );
+        assert!(
+            msg.contains("from_addr"),
+            "error must mention offending key: {msg}"
+        );
+    }
+
+    #[test]
+    fn handles_to_addresses_alias() {
+        let mut args = serde_json::json!({
+            "to_addresses": ["a@x.com", "b@x.com"],
+            "subject": "hi"
+        });
+        normalize_args(&mut args);
+        assert_eq!(args["to"], serde_json::json!(["a@x.com", "b@x.com"]));
+        validate_against_schema(&args, &compose_schema()).expect("must validate");
     }
 }

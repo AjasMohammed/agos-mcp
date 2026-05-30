@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod batch;
 pub mod compose;
 pub mod download_attachment;
@@ -15,6 +16,7 @@ pub mod read;
 pub mod search;
 pub mod send;
 
+pub use auth::{AuthShared, GmailBeginAuthTool, GmailCompleteAuthTool};
 pub use batch::{GmailBatchDeleteTool, GmailBatchModifyLabelsTool, GmailBatchTrashTool};
 pub use download_attachment::GmailDownloadAttachmentTool;
 pub use drafts::{
