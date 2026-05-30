@@ -20,7 +20,7 @@
 
 | Threat | Mitigation |
 |--------|-----------|
-| Plaintext token on disk | Keychain is the default; `--file-store` triggers a loud startup warning and uses Argon2+AES-256-GCM |
+| Plaintext token on disk | Keychain is used whenever reachable; the encrypted-file fallback (auto-selected only when the keychain is unavailable) triggers a loud startup warning and uses Argon2+AES-256-GCM |
 | Token interception during OAuth | PKCE (S256 code challenge), random state parameter, loopback-only redirect (`127.0.0.1`) |
 | Prompt injection leaking tokens | Tokens never appear in tool outputs; audit log hashes only |
 | Malicious MCP host | OAuth tokens are scoped to Gmail only; all scopes are granted interactively by the user |

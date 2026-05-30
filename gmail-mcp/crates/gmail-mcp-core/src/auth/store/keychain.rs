@@ -11,6 +11,22 @@ impl KeychainStore {
     pub fn new(service: &'static str) -> Self {
         Self { service }
     }
+
+    /// Probe whether the OS secret service is actually usable in this
+    /// environment. A reachable-but-empty keychain reports `NoEntry`; a missing
+    /// service (e.g. a headless/systemd session with no D-Bus) reports a
+    /// platform error. Used to pick a token backend automatically so that
+    /// `auth` and `serve` always agree on where tokens live.
+    pub async fn is_available(service: &'static str) -> bool {
+        tokio::task::spawn_blocking(move || {
+            match keyring::Entry::new(service, "__keychain_probe__") {
+                Ok(entry) => matches!(entry.get_secret(), Ok(_) | Err(keyring::Error::NoEntry)),
+                Err(_) => false,
+            }
+        })
+        .await
+        .unwrap_or(false)
+    }
 }
 
 #[async_trait::async_trait]
