@@ -3,6 +3,7 @@ use crate::mcp::{server, tools::ToolRegistry, ping::Ping};
 use crate::auth::storage::build_store;
 use crate::linkedin::LinkedInClient;
 use crate::tools::{
+    auth_status::AuthStatus,
     comment_create::CommentCreate,
     comment_delete::CommentDelete,
     comment_list::CommentList,
@@ -32,10 +33,31 @@ pub async fn run(args: ServeArgs) -> anyhow::Result<()> {
 
     match store.load(&args.account)? {
         Some(record) => {
+            // Warn early (structured, for alerting) if a human re-auth is due
+            // soon, rather than letting a long-running agent fail mid-task.
+            if record.needs_reauth_soon() {
+                tracing::warn!(
+                    account = %args.account,
+                    refresh_expires_in_seconds = record.refresh_expires_in_seconds(),
+                    "LinkedIn refresh token is missing or expiring soon — run `linkedin-mcp auth` to re-authenticate"
+                );
+            }
+            if args.client_secret.is_none() && record.refresh_token.is_some() {
+                tracing::warn!(
+                    "no LINKEDIN_CLIENT_SECRET set; access-token refresh will fail for confidential apps once the current token expires"
+                );
+            }
             let http = reqwest::Client::builder()
                 .user_agent(concat!("linkedin-mcp/", env!("CARGO_PKG_VERSION")))
                 .build()?;
-            let client = Arc::new(LinkedInClient::new(http, record, store.clone(), args.account.clone()));
+            let client = Arc::new(LinkedInClient::new(
+                http,
+                record,
+                store.clone(),
+                args.account.clone(),
+                args.client_secret.clone(),
+            ));
+            registry.register(AuthStatus { client: Some(client.clone()) });
             registry.register(WhoAmI { client: client.clone() });
             registry.register(PostText { client: client.clone() });
             registry.register(PostDelete { client: client.clone() });
@@ -58,8 +80,10 @@ pub async fn run(args: ServeArgs) -> anyhow::Result<()> {
         None => {
             tracing::warn!(
                 account = %args.account,
-                "no token found; only the ping tool is available. Run `linkedin-mcp auth` first."
+                "no token found; only the ping and linkedin-auth-status tools are available. Run `linkedin-mcp auth` first."
             );
+            // Still expose status so an agent can discover it must authenticate.
+            registry.register(AuthStatus { client: None });
         }
     }
 

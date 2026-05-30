@@ -1,3 +1,4 @@
+pub mod auth_status;
 pub mod comment_create;
 pub mod comment_delete;
 pub mod comment_list;

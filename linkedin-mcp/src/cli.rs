@@ -33,4 +33,9 @@ pub struct ServeArgs {
     pub account: String,
     #[arg(long, default_value = "keychain", value_parser = ["keychain", "file"])]
     pub token_store: String,
+    /// Client secret used to refresh the access token. Required for LinkedIn
+    /// confidential apps — without it the refresh grant is rejected and the
+    /// session dies when the access token expires.
+    #[arg(long, env = "LINKEDIN_CLIENT_SECRET")]
+    pub client_secret: Option<String>,
 }
