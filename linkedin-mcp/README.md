@@ -35,6 +35,43 @@ On success, prints:
 Authenticated as Your Name (urn:li:person:...)
 ```
 
+### Staying authenticated (long-running agents)
+
+The access token is short-lived and refreshed automatically before expiry. For a
+**confidential** LinkedIn app the refresh grant requires the client secret, so the
+**serve** process must have it — otherwise the session dies when the access token
+expires:
+
+```bash
+LINKEDIN_CLIENT_SECRET=... linkedin-mcp serve
+# or
+linkedin-mcp serve --client-secret ...
+```
+
+LinkedIn **rotates** the refresh token on each refresh and the refresh token itself
+eventually expires; when it does, a human must re-run `linkedin-mcp auth` (LinkedIn
+has no device/headless grant for member posting). To avoid failing mid-workflow,
+agents should poll the **`linkedin-auth-status`** tool — it reports, with no network
+call, whether re-auth is needed now or soon:
+
+```json
+{
+  "authenticated": true,
+  "access_expires_in_seconds": 3421,
+  "refresh_expires_in_days": 58,
+  "needs_reauth_soon": false,
+  "next_action": "none"
+}
+```
+
+`serve` also logs a structured warning at startup when the refresh token is within
+7 days of expiry (or when `LINKEDIN_CLIENT_SECRET` is unset), suitable for alerting.
+
+> **Scaling beyond one machine:** the loopback browser flow needs a browser on the
+> same host. For multi-machine / multi-account deployments, run a central OAuth
+> broker (public redirect URI + centralized token store and refresh) and back the
+> MCP with a remote `TokenStore` implementation — the storage trait is the seam.
+
 ---
 
 ## Host configuration
@@ -123,6 +160,7 @@ Tokens are stored as plaintext JSON at `~/.local/share/linkedin-mcp/<account>.js
 
 | Tool | Description |
 |------|-------------|
+| `linkedin-auth-status` | Report auth health/expiry and whether re-auth is needed (no network call) |
 | `linkedin-whoami` | Identity of the authenticated member (name, email, picture) |
 | `linkedin-posts-list` | List posts authored by the authenticated member |
 | `linkedin-post-get` | Retrieve a post by URN |

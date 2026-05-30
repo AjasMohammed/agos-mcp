@@ -16,20 +16,78 @@ pub struct LinkedInClient {
     token: Arc<RwLock<TokenRecord>>,
     store: Arc<dyn TokenStore>,
     account: String,
+    /// Required by LinkedIn confidential apps to refresh the access token.
+    client_secret: Option<String>,
 }
 
 impl LinkedInClient {
-    pub fn new(http: reqwest::Client, token: TokenRecord, store: Arc<dyn TokenStore>, account: String) -> Self {
-        Self { http, token: Arc::new(RwLock::new(token)), store, account }
+    pub fn new(
+        http: reqwest::Client,
+        token: TokenRecord,
+        store: Arc<dyn TokenStore>,
+        account: String,
+        client_secret: Option<String>,
+    ) -> Self {
+        Self {
+            http,
+            token: Arc::new(RwLock::new(token)),
+            store,
+            account,
+            client_secret,
+        }
     }
 
     async fn ensure_valid(&self) -> Result<(), LinkedInMcpError> {
-        let needs_refresh = self.token.read().await.is_expiring_soon();
-        if !needs_refresh { return Ok(()); }
+        if !self.token.read().await.is_expiring_soon() {
+            return Ok(());
+        }
+        // Take the write lock, then RE-CHECK: under concurrent tool calls (the
+        // norm for long-running agents) several may observe an expiring token
+        // at once. Without this second check each would refresh in turn, and
+        // since LinkedIn rotates refresh tokens, every refresh after the first
+        // would present an already-invalidated token and fail. The double-check
+        // means only the first writer refreshes; the rest see a fresh token.
         let mut rec = self.token.write().await;
-        refresh::refresh(&self.http, &mut rec).await.map_err(|e| LinkedInMcpError::LinkedInServerError(e.to_string()))?;
-        self.store.save(&self.account, &rec).map_err(|e| LinkedInMcpError::LinkedInServerError(e.to_string()))?;
+        if !rec.is_expiring_soon() {
+            return Ok(());
+        }
+        match refresh::refresh(&self.http, &mut rec, self.client_secret.as_deref()).await {
+            Ok(()) => {}
+            // Keep "human must re-auth" distinct from a transient error: the
+            // former is terminal and surfaces a clear, actionable message.
+            Err(refresh::RefreshError::ReauthRequired(_)) => {
+                return Err(LinkedInMcpError::AuthRequired);
+            }
+            Err(refresh::RefreshError::Transient(m)) => {
+                return Err(LinkedInMcpError::LinkedInServerError(m));
+            }
+        }
+        self.store
+            .save(&self.account, &rec)
+            .map_err(|e| LinkedInMcpError::LinkedInServerError(e.to_string()))?;
         Ok(())
+    }
+
+    /// Local, network-free snapshot of token/expiry state for the
+    /// `linkedin-auth-status` tool, so agents can self-monitor and warn before
+    /// a refresh token dies mid-workflow.
+    pub async fn token_status(&self) -> serde_json::Value {
+        let rec = self.token.read().await;
+        serde_json::json!({
+            "authenticated": true,
+            "sub": rec.sub,
+            "client_id": rec.client_id,
+            "scopes": rec.scopes,
+            "access_expires_in_seconds": rec.access_expires_in_seconds(),
+            "refresh_expires_in_seconds": rec.refresh_expires_in_seconds(),
+            "refresh_expires_in_days": rec.refresh_expires_in_seconds().map(|s| s / 86_400),
+            "needs_reauth_soon": rec.needs_reauth_soon(),
+            "next_action": if rec.needs_reauth_soon() {
+                "Refresh token is missing or expiring soon — run `linkedin-mcp auth` to re-authenticate."
+            } else {
+                "none"
+            }
+        })
     }
 
     pub async fn author_urn(&self) -> String {
