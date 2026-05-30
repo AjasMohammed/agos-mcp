@@ -22,10 +22,8 @@ Works with any [Model Context Protocol](https://spec.modelcontextprotocol.io/) h
 ## Quick start
 
 ```bash
-# Install (one of)
-cargo install gmail-mcp                           # from crates.io (once published)
-brew install agentos-foundry/tap/gmail-mcp        # Homebrew tap
-docker pull ghcr.io/agentos/gmail-mcp:latest      # Docker
+# Install the prebuilt binary (no Rust toolchain, no build) — works on Linux & macOS
+curl -fsSL https://raw.githubusercontent.com/AjasMohammed/agos-mcp/main/install.sh | sh -s -- gmail
 
 # 1. Authenticate (opens browser, stores token in OS keychain — nothing touches disk as plaintext)
 gmail-mcp auth                                    # read-only (default)

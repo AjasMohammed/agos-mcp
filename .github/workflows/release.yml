@@ -1,0 +1,118 @@
+name: Release
+
+# Build prebuilt binaries for both MCP servers and publish them to a single
+# GitHub Release whenever a v* tag is pushed. The install.sh script downloads
+# the artifacts produced here, so no end user ever has to build from source.
+#
+#   git tag v0.1.0 && git push origin v0.1.0
+#
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest,  target: x86_64-unknown-linux-musl,  cross: true  }
+          - { os: ubuntu-latest,  target: aarch64-unknown-linux-musl, cross: true  }
+          - { os: macos-13,       target: x86_64-apple-darwin,        cross: false }
+          - { os: macos-14,       target: aarch64-apple-darwin,       cross: false }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc,     cross: false }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install cross
+        if: matrix.cross
+        run: cargo install cross --locked
+
+      - name: Build both MCP servers
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="${{ matrix.target }}"
+          for proj in gmail-mcp linkedin-mcp; do
+            echo "::group::build $proj for $target"
+            # Build from inside each project so its rust-toolchain.toml pin is
+            # honored, and add the target to whatever toolchain that resolves to.
+            ( cd "$proj"
+              if [ "${{ matrix.cross }}" = "true" ]; then
+                cross build --release --target "$target"
+              else
+                rustup target add "$target"
+                cargo build --release --target "$target"
+              fi
+            )
+            echo "::endgroup::"
+          done
+
+      - name: Package
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          target="${{ matrix.target }}"
+          ext=""
+          if [[ "$target" == *windows* ]]; then ext=".exe"; fi
+          mkdir -p dist
+          # gmail-mcp is a workspace; linkedin-mcp is a single package.
+          # Each leaves its binary under <proj>/target/<target>/release/.
+          for proj in gmail-mcp linkedin-mcp; do
+            bin="${proj}${ext}"
+            src="${proj}/target/${target}/release/${bin}"
+            name="${proj}-${tag}-${target}"
+            mkdir -p "dist/${name}"
+            cp "$src" "dist/${name}/"
+            cp "${proj}/README.md" "dist/${name}/" 2>/dev/null || true
+            cp "${proj}/LICENSE-APACHE" "${proj}/LICENSE-MIT" "dist/${name}/" 2>/dev/null || true
+            ( cd dist
+              if [[ "$target" == *windows* ]]; then
+                7z a "${name}.zip" "${name}" >/dev/null
+              else
+                tar czf "${name}.tar.gz" "${name}"
+              fi
+            )
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Compute checksums
+        run: |
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" \) \
+            -exec sha256sum {} \; | sed 's# .*/# #' > SHA256SUMS
+          cat SHA256SUMS
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+            SHA256SUMS
+          generate_release_notes: true
