@@ -11,6 +11,7 @@ Each server is a standalone binary that implements the [Model Context Protocol](
 | Server | Description | Status |
 |--------|-------------|--------|
 | [`gmail-mcp`](./gmail-mcp) | Gmail integration — 25+ tools for search, read, send, drafts, labels, filters, attachments | Active |
+| [`linkedin-mcp`](./linkedin-mcp) | LinkedIn integration — posts (text, article, image, document, multi-image, poll, reshare), OAuth | Active |
 
 ---
 
@@ -24,10 +25,37 @@ Each server is a standalone binary that implements the [Model Context Protocol](
 
 ## Getting started
 
-See the README inside each server's directory for install and configuration instructions.
+### Install (prebuilt binary — no build required)
+
+One command downloads the right binary for your OS/arch from the latest
+[GitHub Release](https://github.com/AjasMohammed/agos-mcp/releases) and installs
+it to `~/.local/bin`:
 
 ```bash
 # Gmail MCP
+curl -fsSL https://raw.githubusercontent.com/AjasMohammed/agos-mcp/main/install.sh | sh -s -- gmail
+
+# LinkedIn MCP
+curl -fsSL https://raw.githubusercontent.com/AjasMohammed/agos-mcp/main/install.sh | sh -s -- linkedin
+
+# Both
+curl -fsSL https://raw.githubusercontent.com/AjasMohammed/agos-mcp/main/install.sh | sh -s -- all
+```
+
+Then authenticate and attach — no local build path needed:
+
+```bash
+gmail-mcp auth                              # opens browser, stores token in OS keychain
+agentos mcp attach gmail -- gmail-mcp serve
+```
+
+> Releases are produced automatically by [`.github/workflows/release.yml`](./.github/workflows/release.yml)
+> when a `v*` tag is pushed (`git tag v0.1.0 && git push origin v0.1.0`). The installer
+> requires that at least one release exists.
+
+### Build from source (for development)
+
+```bash
 cd gmail-mcp
 cargo build --release
 ./target/release/gmail-mcp auth
