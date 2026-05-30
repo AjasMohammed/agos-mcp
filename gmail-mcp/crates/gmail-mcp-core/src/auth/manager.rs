@@ -21,6 +21,13 @@ impl TokenManager {
         }
     }
 
+    /// Drop the cached access token so the next `access_token()` call
+    /// re-reads from the store. Call after writing a fresh `TokenSet`
+    /// (e.g. after a successful re-auth via the device flow).
+    pub async fn invalidate(&self) {
+        *self.cached.write().await = None;
+    }
+
     pub async fn access_token(&self) -> Result<String, AuthError> {
         {
             let guard = self.cached.read().await;
