@@ -51,8 +51,10 @@ say "platform: $TARGET"
 # ---- resolve version tag ---------------------------------------------------
 if [ "$VERSION" = "latest" ]; then
   say "resolving latest release..."
-  VERSION="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" \
-    | grep -m1 '"tag_name"' | cut -d'"' -f4)"
+  # Capture the full response first; piping curl into `grep -m1` makes grep
+  # close the pipe early, which trips curl's "(23) Failure writing output".
+  resp="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest")"
+  VERSION="$(printf '%s\n' "$resp" | grep '"tag_name"' | head -n1 | cut -d'"' -f4)"
   [ -n "$VERSION" ] || die "could not find a published release. Push a v* tag to trigger the release workflow first."
 fi
 say "version: $VERSION"
