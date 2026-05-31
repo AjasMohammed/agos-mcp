@@ -13,6 +13,12 @@ Each server is a standalone binary that implements the [Model Context Protocol](
 | [`gmail-mcp`](./gmail-mcp) | Gmail integration — 25+ tools for search, read, send, drafts, labels, filters, attachments | Active |
 | [`linkedin-mcp`](./linkedin-mcp) | LinkedIn integration — posts (text, article, image, document, multi-image, poll, reshare), OAuth | Active |
 
+### Supporting services
+
+| Service | Description | Status |
+|---------|-------------|--------|
+| [`linkedin-auth-broker`](./linkedin-auth-broker) | **Optional** centralized OAuth broker for `linkedin-mcp` — deploy once for multi-machine / multi-account fleets. Not needed for single-machine use. | Active |
+
 ---
 
 ## Design principles
