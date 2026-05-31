@@ -38,4 +38,12 @@ pub struct ServeArgs {
     /// session dies when the access token expires.
     #[arg(long, env = "LINKEDIN_CLIENT_SECRET")]
     pub client_secret: Option<String>,
+    /// Base URL of a central linkedin-auth-broker (e.g. https://auth.example.com).
+    /// When set, tokens are fetched from the broker instead of the local
+    /// keychain/file store, and refresh is handled centrally.
+    #[arg(long, env = "LINKEDIN_BROKER_URL")]
+    pub broker_url: Option<String>,
+    /// Bearer token for the broker's internal API (required with --broker-url).
+    #[arg(long, env = "LINKEDIN_BROKER_TOKEN")]
+    pub broker_token: Option<String>,
 }

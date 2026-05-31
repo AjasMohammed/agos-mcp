@@ -26,12 +26,31 @@ use crate::tools::{
 use std::sync::Arc;
 
 pub async fn run(args: ServeArgs) -> anyhow::Result<()> {
-    let store: Arc<dyn crate::auth::TokenStore> = build_store(&args.token_store)?.into();
+    let store: Arc<dyn crate::auth::TokenStore> = match &args.broker_url {
+        Some(url) => {
+            let token = args.broker_token.clone().ok_or_else(|| {
+                anyhow::anyhow!("--broker-url requires --broker-token (or LINKEDIN_BROKER_TOKEN)")
+            })?;
+            tracing::info!(broker = %url, "using central auth broker");
+            Arc::new(crate::auth::storage::RemoteStore::new(url.clone(), token))
+        }
+        None => build_store(&args.token_store)?.into(),
+    };
 
     let mut registry = ToolRegistry::new();
     registry.register(Ping);
 
-    match store.load(&args.account)? {
+    // A broker fetch can fail transiently at startup; treat that like "no token"
+    // (expose ping + auth-status) rather than crashing the server.
+    let loaded = match store.load(&args.account).await {
+        Ok(v) => v,
+        Err(e) => {
+            tracing::warn!(account = %args.account, error = %e, "failed to load token at startup");
+            None
+        }
+    };
+
+    match loaded {
         Some(record) => {
             // Warn early (structured, for alerting) if a human re-auth is due
             // soon, rather than letting a long-running agent fail mid-task.
@@ -42,7 +61,7 @@ pub async fn run(args: ServeArgs) -> anyhow::Result<()> {
                     "LinkedIn refresh token is missing or expiring soon — run `linkedin-mcp auth` to re-authenticate"
                 );
             }
-            if args.client_secret.is_none() && record.refresh_token.is_some() {
+            if !store.is_remote() && args.client_secret.is_none() && record.refresh_token.is_some() {
                 tracing::warn!(
                     "no LINKEDIN_CLIENT_SECRET set; access-token refresh will fail for confidential apps once the current token expires"
                 );

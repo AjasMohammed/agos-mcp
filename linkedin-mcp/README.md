@@ -67,10 +67,24 @@ call, whether re-auth is needed now or soon:
 `serve` also logs a structured warning at startup when the refresh token is within
 7 days of expiry (or when `LINKEDIN_CLIENT_SECRET` is unset), suitable for alerting.
 
-> **Scaling beyond one machine:** the loopback browser flow needs a browser on the
-> same host. For multi-machine / multi-account deployments, run a central OAuth
-> broker (public redirect URI + centralized token store and refresh) and back the
-> MCP with a remote `TokenStore` implementation — the storage trait is the seam.
+### Central broker mode (multi-machine / multi-account)
+
+For deployments where the loopback browser flow (which needs a browser on the same
+host) doesn't fit, run the [`linkedin-auth-broker`](../linkedin-auth-broker) and
+point `serve` at it. The MCP then fetches already-valid access tokens from the
+broker instead of using a local keychain/file store, and refresh happens centrally:
+
+```bash
+LINKEDIN_BROKER_URL=https://auth.example.com \
+LINKEDIN_BROKER_TOKEN=$BROKER_API_TOKEN \
+linkedin-mcp serve
+# or: linkedin-mcp serve --broker-url … --broker-token …
+```
+
+In this mode the client holds no secret or refresh token: when its cached access
+token nears expiry it re-fetches from the broker (which refreshes server-side). If
+the broker reports re-auth is required, tool calls surface an auth error and an
+operator re-runs the broker's `/li/start` flow. See the broker README for setup.
 
 ---
 
