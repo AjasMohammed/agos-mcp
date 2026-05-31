@@ -5,6 +5,12 @@ the LinkedIn **client secret** and **refresh tokens** in one place, refreshes
 access tokens centrally (on demand and on a schedule), and serves short-lived
 access tokens to many MCP instances over an authenticated internal API.
 
+> **Do you need this?** Only for multi-machine / multi-account deployments. For a
+> single machine, run `linkedin-mcp serve` on its own ("local mode") — no broker.
+> The broker is **deploy-once infrastructure** (like a database): you run one
+> instance for your whole fleet and leave it up; you do **not** start it alongside
+> every MCP. See [deployment modes](../linkedin-mcp#deployment-modes).
+
 This is **Phase 2** of the LinkedIn auth plan (see [`../plans/linkedin-auth.md`](../plans/linkedin-auth.md)).
 It exists to solve what the single-instance flow can't:
 

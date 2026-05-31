@@ -4,6 +4,27 @@ Production-grade LinkedIn MCP server written in Rust. Works with any [Model Cont
 
 ---
 
+## Deployment modes
+
+There are two ways to run this, and **most users only need the first**:
+
+| | **Local mode** (default) | **Broker mode** (optional) |
+|---|---|---|
+| When | Single machine | Many machines / accounts, or consent must happen off-host |
+| Run | just `linkedin-mcp serve` | a central [`linkedin-auth-broker`](../linkedin-auth-broker) **+** `linkedin-mcp serve --broker-url …` |
+| Token & refresh | in the MCP process (keychain/file) | held & refreshed centrally by the broker |
+| Secrets on the host | client secret (for refresh) | none — host only gets short-lived access tokens |
+
+**You do not need the broker for a single-machine setup.** It is *optional infrastructure*
+you deploy **once** for a fleet (like a database) — not a second process you start
+alongside every MCP. Pick a mode:
+
+- **Local** → follow [Quick start](#quick-start) below. Done.
+- **Broker** → run the broker once (see its [README](../linkedin-auth-broker)), then
+  start each MCP with `--broker-url` (see [Central broker mode](#central-broker-mode-multi-machine--multi-account)).
+
+---
+
 ## Quick start
 
 ```bash
