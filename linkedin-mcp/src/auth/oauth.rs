@@ -74,7 +74,7 @@ pub async fn run(args: AuthArgs) -> Result<()> {
             .collect(),
         client_id,
     };
-    store.save(&args.account, &record)?;
+    store.save(&args.account, &record).await?;
     eprintln!("Authenticated as {} ({})", userinfo.name, record.sub);
     Ok(())
 }
